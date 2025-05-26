@@ -3,7 +3,8 @@
 const express = require('express'); 
 const cors = require('cors');
 require('dotenv').config(); // Загружаем переменные окружения из .env
-const jwt = require('jsonwebtoken'); // Импортируем jsonwebtoken
+const jwt = require('jsonwebtoken'); 
+const mongoose = require('mongoose');
 
 
 
@@ -11,11 +12,36 @@ const jwt = require('jsonwebtoken'); // Импортируем jsonwebtoken
 const app = express();            
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
+const MONGO_URI = process.env.MONGO_URI;
 
 if (!JWT_SECRET) {
   console.error('Ошибка: JWT_SECRET не определен в файле .env. Авторизация не будет работать.');
   process.exit(1); 
 }
+if (!MONGO_URI) {
+  console.error('Ошибка: MONGO_URI не определен в файле .env. База данных не будет подключена.');
+  process.exit(1);
+}
+
+// --- Подключение к MongoDB ---
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('Подключение к MongoDB успешно!'))
+  .catch(err => {
+    console.error('Ошибка подключения к MongoDB:', err);
+    process.exit(1); // Завершаем процесс, если не удалось подключиться
+  });
+
+// --- Определение схемы блюда для меню ---
+const menuItemSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    price: { type: Number, required: true },
+    image: { type: String, required: true }
+});
+
+// Создание модели на основе схемы
+const MenuItem = mongoose.model('MenuItem', menuItemSchema);
+
 
 
 
@@ -73,47 +99,66 @@ app.get('/', (req, res) => {
 });
 
 // GET-маршрут для получения всего меню
-app.get('/api/menu', (req, res) => {
-  res.json(menuItemsData); // Отправляем данные из нашего временного хранилища
-})
+app.get('/api/menu', async (req, res) => {
+    try {
+        const items = await MenuItem.find(); // Получаем все блюда из БД
+        res.json(items);
+    } catch (error) {
+        console.error('Ошибка при получении меню:', error);
+        res.status(500).json({ message: 'Ошибка сервера при получении меню' });
+    }
+});
 
 // POST-маршрут для добавления нового блюда
-app.post('/api/menu', authenticateToken, (req, res) => {
-  const newItem = req.body; // Получаем данные нового блюда из тела запроса
-  newItem.id = menuItemsData.length > 0 ? Math.max(...menuItemsData.map(item => item.id)) + 1 : 1;
-  menuItemsData.push(newItem); // Добавляем новое блюдо в наш массив
-  console.log('Добавлено новое блюдо:', newItem);
-  res.status(201).json(newItem); // Отправляем ответ со статусом 201 (Created) и созданным объектом
+app.post('/api/menu', authenticateToken, async (req, res) => {
+    try {
+        const newItem = new MenuItem(req.body); // Создаем новый документ на основе пришедших данных
+        await newItem.save(); // Сохраняем его в БД
+        console.log('Добавлено новое блюдо в БД:', newItem);
+        res.status(201).json(newItem);
+    } catch (error) {
+        console.error('Ошибка при добавлении блюда:', error);
+        res.status(400).json({ message: 'Ошибка при добавлении блюда', error: error.message });
+    }
 });
 
 
 // PUT-маршрут для обновления существующего блюда
-app.put('/api/menu/:id', authenticateToken, (req, res) => {
-    const itemId = parseInt(req.params.id); // Получаем ID из URL
-    const updatedItem = req.body;            // Получаем обновленные данные из тела запроса
-    const index = menuItemsData.findIndex(item => item.id === itemId);
+app.put('/api/menu/:id', authenticateToken, async (req, res) => {
+    try {
+        const itemId = req.params.id; // ID теперь будет строкой (ObjectId из MongoDB)
+        const updatedItem = req.body;
+        // findByIdAndUpdate находит по ID и обновляет. new: true возвращает обновленный документ.
+        const item = await MenuItem.findByIdAndUpdate(itemId, updatedItem, { new: true });
 
-    if (index !== -1) {
-        menuItemsData[index] = { ...updatedItem, id: itemId }; // Обновляем данные, сохраняя оригинальный ID
-        console.log('Обновлено блюдо:', menuItemsData[index]);
-        res.json(menuItemsData[index]); // Отправляем обновленный объект
-    } else {
-        res.status(404).send('Блюдо не найдено'); // Если блюдо с таким ID не найдено
+        if (item) {
+            console.log('Обновлено блюдо в БД:', item);
+            res.json(item);
+        } else {
+            res.status(404).send('Блюдо не найдено');
+        }
+    } catch (error) {
+        console.error('Ошибка при обновлении блюда:', error);
+        res.status(500).json({ message: 'Ошибка сервера при обновлении блюда' });
     }
 });
 
 
 // DELETE-маршрут для удаления блюда
-app.delete('/api/menu/:id', authenticateToken, (req, res) => {
-    const itemId = parseInt(req.params.id); // Получаем ID из URL
-    const initialLength = menuItemsData.length;
-    menuItemsData = menuItemsData.filter(item => item.id !== itemId); // Фильтруем, удаляя нужный элемент
+app.delete('/api/menu/:id', authenticateToken, async (req, res) => {
+    try {
+        const itemId = req.params.id; // ID будет строкой (ObjectId)
+        const result = await MenuItem.findByIdAndDelete(itemId); // Находит и удаляет по ID
 
-    if (menuItemsData.length < initialLength) {
-        console.log('Удалено блюдо с ID:', itemId);
-        res.status(204).send(); // Отправляем статус 204 No Content (успешно, но нет тела ответа)
-    } else {
-        res.status(404).send('Блюдо не найдено');
+        if (result) {
+            console.log('Удалено блюдо из БД, ID:', itemId);
+            res.status(204).send(); // 204 No Content - успешно удалено, нет тела ответа
+        } else {
+            res.status(404).send('Блюдо не найдено');
+        }
+    } catch (error) {
+        console.error('Ошибка при удалении блюда:', error);
+        res.status(500).json({ message: 'Ошибка сервера при удалении блюда' });
     }
 });
 
