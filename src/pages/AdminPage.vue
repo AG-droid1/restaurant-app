@@ -2,7 +2,9 @@
     <div class="admin-page">
       <h1>Панель администратора</h1>
   
-      <form @submit.prevent="handleSubmit" class="admin-form">
+      
+        <button @click="logoutAdmin" class="logout-btn">Выйти</button>
+        <form @submit.prevent="handleSubmit" class="admin-form">
         <input v-model="form.name" type="text" placeholder="Название блюда" required />
         <input v-model="form.description" type="text" placeholder="Описание" required />
         <input v-model.number="form.price" type="number" placeholder="Цена" required />
@@ -49,7 +51,7 @@
   </template>
   
   <script>
-import { mapState, mapMutations } from 'vuex'
+import { mapState, mapMutations, mapActions } from 'vuex'
 
 export default {
   computed: {
@@ -58,36 +60,60 @@ export default {
   },
   data() {
     return {
-      form: {
-        id: null,
+      form: { 
+      id: null,
+      name: '',
+      description: '',
+      price: '',
+      image: ''
+    },
+      
+
+       newDish: {
         name: '',
         description: '',
-        price: '',
+        price: 0,
         image: ''
-      }
+      },
+
     }
   },
   methods: {
-    ...mapMutations(['addMenuItem', 'updateMenuItem', 'deleteMenuItem', 'deleteBooking', 'updateReview', 'deleteReview']),
-    handleSubmit() {
-      if (this.form.id) {
-        this.updateMenuItem({ ...this.form })
-      } else {
-        const newItem = {
-          ...this.form,
-          id: Date.now()
-        }
-        this.addMenuItem(newItem)
-      }
-      this.resetForm()
-    },
+    ...mapMutations([ 'deleteBooking', 'updateReview', 'deleteReview']),
+     ...mapActions(['addMenuItem', 'fetchMenuItems', 'updateMenuItem', 'deleteMenuItem', 'logout']),
+
+ 
+handleSubmit: async function() { 
+    if (!this.form.name || !this.form.price || !this.form.image) {
+      alert('Пожалуйста, заполните все обязательные поля (Название, Цена, Изображение).');
+      return;
+    }
+    if (this.form.id) {
+      // Логика обновления блюда
+      await this.updateMenuItem({ ...this.form }); 
+      alert('Блюдо успешно обновлено!'); 
+    } else {
+      // Логика добавления нового блюда
+      const newItem = {
+        ...this.form,
+      };
+      await this.addMenuItem(newItem); // Вызываем Action, который отправляет на бэкенд
+      alert('Блюдо успешно добавлено!'); 
+    }
+    this.resetForm();
+  },
+
+    
     editItem(item) {
       this.form = { ...item }
     },
-    deleteItemFromForm(id) {
-      this.deleteMenuItem(id)
-      if (this.form.id === id) this.resetForm()
-    },
+     deleteItemFromForm: async function(id) { // Делаем async
+    if (confirm('Вы уверены, что хотите удалить это блюдо?')) {
+      await this.deleteMenuItem(id); // Вызываем Action для удаления
+      alert('Блюдо успешно удалено!'); // Уведомление об удалении
+      if (this.form.id === id) this.resetForm();
+    }
+  },
     resetForm() {
       this.form = {
         id: null,
@@ -99,9 +125,19 @@ export default {
     },
     removeBooking(index) {
   this.deleteBooking(index)
-}
+},
+
+ 
+    logoutAdmin() {
+      this.logout(); 
+      this.$router.push('/admin-login'); 
+    }
+  },
+  created() {
+    this.fetchMenuItems();
   }
 }
+ 
 </script>
 
   <!-- <script>
@@ -154,6 +190,21 @@ export default {
   </script> -->
   
   <style scoped>
+  .logout-btn {
+  background-color: #dc3545; 
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 20px; 
+  transition: background-color 0.3s ease;
+}
+
+.logout-btn:hover {
+  background-color: #c82333;
+}
   .admin-page {
     padding: 40px;
   }

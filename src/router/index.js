@@ -11,13 +11,13 @@ import store from '../store'
 
 
 
-const requireAdmin = (to, from, next) => {
-  if (store.getters.isAdmin) {
-    next()
-  } else {
-    next('/admin-login')
-  }
-}
+// const requireAdmin = (to, from, next) => {
+//   if (store.getters.isAdmin) {
+//     next()
+//   } else {
+//     next('/admin-login')
+//   }
+// }
 
 const routes = [
   { path: '/', name: 'Home', component: HomePage },
@@ -35,21 +35,31 @@ const routes = [
 },
 {
   path: '/admin',
-  name: 'AdminPage',
+  name: 'Admin',
   component: () => import('../pages/AdminPage.vue'),
-  beforeEnter: requireAdmin
+  meta: { requiresAuth: true }
 },
 {
   path: '/admin-chat',
   name: 'AdminChat',
   component: () => import('../pages/AdminChat.vue'),
-  beforeEnter: requireAdmin
+   meta: { requiresAuth: true }
 }
 ]
+
+
 
 const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  if (to.meta.requiresAuth && !store.getters.isAdmin) {
+    next({ name: 'AdminLogin' }); 
+  } else {
+    next(); 
+  }
+});
 
 export default router

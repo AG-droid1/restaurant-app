@@ -12,7 +12,7 @@
           <router-link to="/chat" class="nav-link" @click="closeMenu">💬 Чат</router-link>
           <router-link v-if="isAdmin" to="/admin-chat" class="nav-link" @click="closeMenu">🛠️ Ответы</router-link>
           <router-link to="/admin-login" class="nav-link" @click="closeMenu">🛠️Вход Администратора</router-link>
-          <button v-if="isAdmin" @click="logoutAdmin">🚪 Выйти</button>
+          <!-- <button v-if="isAdmin" @click="logoutAdmin">🚪 Выйти</button> -->
            <!-- Корзина с дропдауном -->
         <div class="cart-wrapper" @mouseenter="showCart = true" @mouseleave="showCart = false">
           <router-link to="/cart" class="nav-link">🛒 Корзина <span v-if="cartCount">({{ cartCount }})</span> </router-link>

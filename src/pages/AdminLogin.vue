@@ -1,9 +1,9 @@
 <template>
   <div class="admin-login">
     <h2>Вход для администратора</h2>
-    <form @submit.prevent="login">
-      <input v-model="username" type="text" placeholder="Логин" required />
-      <input v-model="password" type="password" placeholder="Пароль" required />
+    <form @submit.prevent="handleLogin"> 
+    <input v-model="username" type="text" placeholder="Логин" required />
+    <input v-model="password" type="password" placeholder="Пароль" required />
       <button type="submit">Войти</button>
     </form>
     <p v-if="error" class="error">{{ error }}</p>
@@ -11,9 +11,10 @@
 </template>
 
 <script>
-import { mapMutations } from 'vuex'
+import { mapActions } from 'vuex'
 
 export default {
+  name: 'AdminLogin',
   data() {
     return {
       username: '',
@@ -22,17 +23,31 @@ export default {
     }
   },
   methods: {
-    ...mapMutations(['loginAdmin']),
-    login() {
-      if (this.username === 'admin' && this.password === '1234') {
-        this.loginAdmin()
-        this.$router.push('/admin')
+  //   ...mapMutations(['loginAdmin']),
+  //   login() {
+  //     if (this.username === 'admin' && this.password === '1234') {
+  //       this.loginAdmin()
+  //       this.$router.push('/admin')
+  //     } else {
+  //       this.error = 'Неверные данные'
+  //     }
+  //   }
+   ...mapActions(['login']), // Подключаем Vuex Action для логина
+    async handleLogin() { // Сделали метод async, потому что Action login асинхронный
+      this.error = ''; // Очищаем предыдущие ошибки
+      const success = await this.login({ username: this.username, password: this.password });
+
+      if (success) {
+        this.$router.push('/admin'); // Перенаправляем на админ-панель после успешного входа
       } else {
-        this.error = 'Неверные данные'
+        // Ошибка уже выведена через alert в Vuex Action, но можно добавить свою
+        this.error = 'Неверные данные для входа. Попробуйте еще раз.';
       }
     }
   }
 }
+  
+
 </script>
 
 <style scoped>
@@ -45,6 +60,8 @@ input {
   width: 100%;
   margin-bottom: 12px;
   padding: 10px;
+  border: 1px solid #ddd; 
+  border-radius: 5px; 
 }
 button {
   padding: 10px 20px;
@@ -52,6 +69,7 @@ button {
   color: white;
   border: none;
   border-radius: 5px;
+  cursor: pointer;
 }
 .error {
   color: red;
