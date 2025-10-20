@@ -122,6 +122,7 @@
   .menu-page {
     padding: 40px;
     text-align: center;
+    background: url('/bg-restaurant.jpg') center/cover no-repeat;
   }
   
   .menu-list {
@@ -170,13 +171,13 @@
   position: relative;
   max-width: 900px;
   margin: 0 auto 40px;
-  border-radius: 20px; /* уменьшил радиус */
-  overflow: hidden;   /* убираем скрытие отсюда */
+  border-radius: 20px; 
+  overflow: hidden;   
 }
 
 .slide {
   display: none;
-  position: relative; /* добавляем, чтобы потом можно было позиционировать текст */
+  position: relative; 
   border-radius: 20px;
   overflow: hidden;
 }
@@ -194,14 +195,15 @@
 
 .slide-info {
   position: absolute;
-  bottom: 20px;   /* отступ от низа картинки */
-  left: 20px;     /* отступ слева */
-  right: 20px;    /* отступ справа */
-  background-color: rgba(0, 0, 0, 0.5); /* тёмный полупрозрачный фон */
+  bottom: 20px;   
+  left: 20px;     
+  right: 20px;   
+  background-color: rgba(0, 0, 0, 0.5); 
   color: white;
   padding: 15px;
   border-radius: 12px;
   text-align: left;
+  
 }
 .slide-info h3 {
   margin: 0 0 5px;

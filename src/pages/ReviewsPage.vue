@@ -47,6 +47,7 @@ export default {
 
 <style scoped>
 .reviews-page {
+
   max-width: 600px;
   margin: 0 auto;
   padding: 30px;

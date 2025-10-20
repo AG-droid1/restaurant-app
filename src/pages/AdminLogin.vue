@@ -32,15 +32,14 @@ export default {
   //       this.error = 'Неверные данные'
   //     }
   //   }
-   ...mapActions(['login']), // Подключаем Vuex Action для логина
-    async handleLogin() { // Сделали метод async, потому что Action login асинхронный
-      this.error = ''; // Очищаем предыдущие ошибки
+   ...mapActions(['login']), 
+    async handleLogin() { 
+      this.error = ''; 
       const success = await this.login({ username: this.username, password: this.password });
 
       if (success) {
-        this.$router.push('/admin'); // Перенаправляем на админ-панель после успешного входа
+        this.$router.push('/admin'); 
       } else {
-        // Ошибка уже выведена через alert в Vuex Action, но можно добавить свою
         this.error = 'Неверные данные для входа. Попробуйте еще раз.';
       }
     }

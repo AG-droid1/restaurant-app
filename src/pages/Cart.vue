@@ -44,7 +44,6 @@ export default {
   methods: {
     ...mapMutations(['removeFromCart', 'clearCart']),
     submitOrder() {
-      // Здесь могла бы быть отправка на сервер
       alert(`Спасибо за заказ, ${this.form.name}!`)
       this.clearCart()
       this.form = { name: '', address: '', phone: '' }

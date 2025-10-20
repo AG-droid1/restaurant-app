@@ -1,5 +1,6 @@
 import { createStore } from 'vuex';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 const API_BASE_URL = 'http://localhost:3000';
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -7,9 +8,9 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('jwt_token'); // Получаем токен из localStorage
+    const token = localStorage.getItem('jwt_token'); 
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`; // Добавляем токен в заголовок Authorization
+      config.headers.Authorization = `Bearer ${token}`; 
     }
     return config;
   },
@@ -19,19 +20,20 @@ axiosInstance.interceptors.request.use(
 );
 
 
-export default createStore({
+const socket = io(API_BASE_URL);
+
+const store = createStore ({
   state: {
     menuItems:[],
     bookings: JSON.parse(localStorage.getItem('bookings')) || [],
     reviews: JSON.parse(localStorage.getItem('reviews')) || [],
     cart: JSON.parse(localStorage.getItem('cart')) || [],
-    chatMessages: JSON.parse(localStorage.getItem('chatMessages')) || [],
+    chatMessages: [],
     isAdmin: JSON.parse(localStorage.getItem('isAdmin')) || false,
     jwt_token: localStorage.getItem('jwt_token') || null, 
   },
   mutations: {
     // меню блюда
-     // Новая мутация для установки всего массива меню
     setMenuItems(state, items) {
       state.menuItems = items;
       
@@ -96,10 +98,17 @@ export default createStore({
     localStorage.setItem('cart', JSON.stringify(state.cart))
   },
   //Чат
-    addMessage(state, message) {
-    state.chatMessages.push(message)
-    localStorage.setItem('chatMessages', JSON.stringify(state.chatMessages))
-  },
+
+  setChatMessages(state, messages) {
+      state.chatMessages = messages;
+    },
+    addChatMessage(state, message) {
+      state.chatMessages.push(message);
+    },
+  //   addMessage(state, message) {
+  //   state.chatMessages.push(message)
+  //   localStorage.setItem('chatMessages', JSON.stringify(state.chatMessages))
+  // },
   //логин админа
   //  loginAdmin(state) {
   //   state.isAdmin = true
@@ -126,11 +135,11 @@ export default createStore({
 
 
   actions: {
-    // Асинхронное действие для загрузки меню с бэкенда
+    
     async fetchMenuItems({ commit }) {
       try {
         const response = await axiosInstance.get('/api/menu');
-        commit('setMenuItems', response.data); // Вызываем мутацию для обновления состояния
+        commit('setMenuItems', response.data); 
         console.log('Меню успешно загружено с бэкенда:', response.data);
       } catch (error) {
         console.error('Ошибка загрузки меню с бэкенда:', error);
@@ -151,10 +160,8 @@ export default createStore({
 
    async updateMenuItem({ commit }, updatedItem) {
             try {
-                // Отправляем PUT запрос на бэкенд, указывая ID в URL
-                
                 const response = await axiosInstance.put(`/api/menu/${updatedItem.id}`, updatedItem);
-                commit('updateMenuItem', response.data); // Обновляем состояние Vuex полученными данными
+                commit('updateMenuItem', response.data); 
                 console.log('Блюдо успешно обновлено на бэкенде:', response.data);
             } catch (error) {
                 console.error('Ошибка обновления блюда на бэкенде:', error);
@@ -164,7 +171,6 @@ export default createStore({
 
          async deleteMenuItem({ commit }, id) {
             try {
-                // Отправляем DELETE запрос на бэкенд, указывая ID в URL
                await axiosInstance.delete(`/api/menu/${id}`);
                 commit('deleteMenuItem', id);
                 console.log('Блюдо успешно удалено с бэкенда, ID:', id);
@@ -179,21 +185,34 @@ export default createStore({
       try {
         const response = await axios.post(`${API_BASE_URL}/api/login`, credentials);
         const { token } = response.data;
-        commit('setJwtToken', token); // Сохраняем токен
-        await dispatch('fetchMenuItems'); // Перезагружаем меню, если нужно
-        return true; // Успешный вход
+        commit('setJwtToken', token); 
+        await dispatch('fetchMenuItems'); 
+        return true; 
       } catch (error) {
         console.error('Ошибка входа:', error.response?.data?.message || error.message);
-        // Используем error.response?.data?.message для получения сообщения об ошибке с бэкенда
         alert(error.response?.data?.message || 'Ошибка входа. Проверьте учетные данные.');
-        return false; // Ошибка входа
+        return false; 
       }
     },
     
     logout({ commit }) {
       commit('clearAuthData');
       console.log('Выход выполнен. Данные аутентификации очищены.');
-    }
+    },
+
+     async fetchChatHistory({ commit }) {
+        try {
+            const response = await axiosInstance.get('/api/chat/history');
+            commit('setChatMessages', response.data);
+            console.log('История чата загружена:', response.data.length, 'сообщений');
+        } catch (error) {
+            console.error('Ошибка загрузки истории чата:', error);
+        }
+    },
+    sendChatMessage({ commit }, messageData) {
+        socket.emit('sendMessage', messageData);
+        
+    },
   },
 
 
@@ -209,3 +228,31 @@ export default createStore({
     jwtToken: (state) => state.jwt_token,
   }
 })
+
+
+// --- Обработчики Socket.IO событий (вне createStore) ---
+// Это важно, чтобы они были зарегистрированы один раз при создании стора.
+socket.on('connect', () => {
+    console.log('Подключен к Socket.IO серверу!');
+});
+
+socket.on('disconnect', () => {
+    console.log('Отключен от Socket.IO сервера.');
+});
+
+socket.on('connect_error', (error) => {
+    console.error('Ошибка подключения Socket.IO:', error);
+});
+
+socket.on('receiveMessage', (message) => {
+    console.log('Получено сообщение через Socket.IO:', message);
+    store.commit('addChatMessage', message);
+});
+
+socket.on('chat history', (history) => {
+    console.log('Получена история чата через Socket.IO при подключении.');
+    store.commit('setChatMessages', history);
+});
+
+
+export default store;

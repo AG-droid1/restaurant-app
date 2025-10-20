@@ -89,15 +89,15 @@ handleSubmit: async function() {
       return;
     }
     if (this.form.id) {
-      // Логика обновления блюда
+      
       await this.updateMenuItem({ ...this.form }); 
       alert('Блюдо успешно обновлено!'); 
     } else {
-      // Логика добавления нового блюда
+      
       const newItem = {
         ...this.form,
       };
-      await this.addMenuItem(newItem); // Вызываем Action, который отправляет на бэкенд
+      await this.addMenuItem(newItem); 
       alert('Блюдо успешно добавлено!'); 
     }
     this.resetForm();
@@ -107,10 +107,10 @@ handleSubmit: async function() {
     editItem(item) {
       this.form = { ...item }
     },
-     deleteItemFromForm: async function(id) { // Делаем async
+     deleteItemFromForm: async function(id) { 
     if (confirm('Вы уверены, что хотите удалить это блюдо?')) {
-      await this.deleteMenuItem(id); // Вызываем Action для удаления
-      alert('Блюдо успешно удалено!'); // Уведомление об удалении
+      await this.deleteMenuItem(id); 
+      alert('Блюдо успешно удалено!'); 
       if (this.form.id === id) this.resetForm();
     }
   },

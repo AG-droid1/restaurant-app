@@ -10,8 +10,8 @@ const app = createApp(App)
 app.use(router)
 app.use(store)
 
-// Вызываем действие для загрузки меню сразу после подключения хранилища
-store.dispatch('fetchMenuItems') // Это запустит Action fetchMenuItems
+
+store.dispatch('fetchMenuItems') 
 
 app.mount('#app')
 

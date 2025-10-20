@@ -82,6 +82,7 @@ html, body, #app {
 #app {
   display: flex;
   flex-direction: column;
+  
 }
 
 .layout {
@@ -93,6 +94,9 @@ html, body, #app {
 .app-header {
   background-color: #ff6347;
   padding: 15px 30px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .nav {
@@ -108,7 +112,8 @@ html, body, #app {
 }
 
 .nav-link:hover {
-  opacity: 0.8;
+  opacity: 0.7;
+  
 }
 
 .app-main {
@@ -160,6 +165,7 @@ html, body, #app {
 }
 .cart-wrapper {
   position: relative;
+  
 }
 
 .mini-cart {
@@ -172,7 +178,7 @@ html, body, #app {
   border: 1px solid #ddd;
   border-radius: 6px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  z-index: 10;
+  z-index: 1001;
   padding: 10px;
 }
 

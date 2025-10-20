@@ -5,11 +5,21 @@ const cors = require('cors');
 require('dotenv').config(); // Загружаем переменные окружения из .env
 const jwt = require('jsonwebtoken'); 
 const mongoose = require('mongoose');
+const { createServer } = require('http'); // Импортируем для создания HTTP сервера
+const { Server } = require('socket.io'); // Импортируем Socket.IO Server
 
 
 
 
-const app = express();            
+
+const app = express();
+const server = createServer(app); // Создаем HTTP сервер из Express приложения
+const io = new Server(server, { // Инициализируем Socket.IO
+    cors: {
+        origin: "http://localhost:5173", // Разрешаем CORS для твоего фронтенда
+        methods: ["GET", "POST"]
+    }
+});
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const MONGO_URI = process.env.MONGO_URI;
@@ -42,6 +52,13 @@ const menuItemSchema = new mongoose.Schema({
 // Создание модели на основе схемы
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);
 
+
+const chatMessageSchema = new mongoose.Schema({
+    text: { type: String, required: true },
+    from: { type: String, required: true }, // 'user' или 'admin'
+    timestamp: { type: Date, default: Date.now } // Время отправки сообщения
+});
+const ChatMessage = mongoose.model('ChatMessage', chatMessageSchema);
 
 
 
@@ -163,8 +180,55 @@ app.delete('/api/menu/:id', authenticateToken, async (req, res) => {
 });
 
 
-// Запуск сервера
-app.listen(PORT, () => {
-  console.log(`Сервер запущен на порту ${PORT}`);
-  console.log(`Открой в браузере: http://localhost:${PORT}`);
+// --- НОВЫЕ МАРШРУТЫ ДЛЯ ИСТОРИИ ЧАТА (REST API) ---
+app.get('/api/chat/history', async (req, res) => {
+    try {
+        const messages = await ChatMessage.find().sort({ timestamp: 1 }); // Сортируем по времени
+        res.json(messages);
+    } catch (error) {
+        console.error('Ошибка при получении истории чата:', error);
+        res.status(500).json({ message: 'Ошибка сервера при получении истории чата' });
+    }
+});
+
+// --- Socket.IO логика ---
+io.on('connection', (socket) => {
+    console.log('Новое подключение Socket.IO:', socket.id);
+
+    // Отправляем текущую историю чата новому подключению
+    ChatMessage.find().sort({ timestamp: 1 })
+        .then(messages => {
+            socket.emit('chat history', messages);
+        })
+        .catch(err => console.error('Ошибка при загрузке истории чата для нового сокета:', err));
+
+    // Обработка сообщения от клиента (пользователя или админа)
+    socket.on('sendMessage', async (msg) => {
+        console.log('Получено сообщение:', msg);
+        try {
+            // Создаем и сохраняем сообщение в БД
+            const newChatMessage = new ChatMessage({
+                text: msg.text,
+                from: msg.from // 'user' или 'admin'
+            });
+            await newChatMessage.save();
+
+            // Отправляем сообщение всем подключенным клиентам
+            io.emit('receiveMessage', newChatMessage);
+        } catch (error) {
+            console.error('Ошибка при сохранении или отправке сообщения:', error);
+        }
+    });
+
+    // Обработка отключения клиента
+    socket.on('disconnect', () => {
+        console.log('Клиент отключился:', socket.id);
+    });
+});
+
+// Запуск HTTP сервера (вместо app.listen)
+server.listen(PORT, () => {
+    console.log(`Сервер Express запущен на порту ${PORT}`);
+    console.log(`Сервер Socket.IO запущен на порту ${PORT}`);
+    console.log(`Открой в браузере: http://localhost:${PORT}`);
 });

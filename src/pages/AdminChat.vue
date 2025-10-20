@@ -2,7 +2,7 @@
   <div class="admin-chat">
     <h2>Чат с клиентами</h2>
 
-    <div class="chat-window">
+    <div class="chat-window" ref="chatWindow">
       <div v-for="(msg, index) in messages" :key="index" :class="['chat-msg', msg.from]">
         <span><strong>{{ msg.from === 'admin' ? 'Вы' : 'Клиент' }}:</strong> {{ msg.text }}</span>
       </div>
@@ -16,7 +16,7 @@
 </template>
 
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 
 export default {
   name: 'AdminChat',
@@ -32,11 +32,37 @@ export default {
     }
   },
   methods: {
-    ...mapMutations(['addMessage']),
+   
+      ...mapActions(['sendChatMessage', 'fetchChatHistory']), 
     sendMessage() {
-      this.addMessage({ text: this.message, from: 'admin' })
-      this.message = ''
+      if (this.message.trim() === '') return; 
+
+      const msg = { text: this.message, from: 'admin' };
+      this.sendChatMessage(msg); 
+      this.message = ''; 
+    },
+    scrollToBottom() {
+      this.$nextTick(() => {
+        const chatWindow = this.$refs.chatWindow;
+        if (chatWindow) {
+          chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+      });
     }
+  },
+  watch: {
+    messages: {
+      handler() {
+        this.scrollToBottom(); 
+      },
+      deep: true 
+    }
+  },
+  created() {
+    this.fetchChatHistory();
+  },
+  mounted() {
+    this.scrollToBottom(); 
   }
 }
 </script>
@@ -46,6 +72,9 @@ export default {
   max-width: 600px;
   margin: 40px auto;
   padding: 20px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
 .chat-window {
@@ -56,23 +85,27 @@ export default {
   overflow-y: auto;
   margin-bottom: 15px;
   background: #f9f9f9;
+  display: flex;
+  flex-direction: column;
 }
+
 
 .chat-msg {
   padding: 10px;
   margin-bottom: 8px;
   border-radius: 6px;
   max-width: 70%;
+  word-wrap: break-word;
 }
 
 .chat-msg.user {
   background: #d1e7ff;
-  align-self: flex-start;
+  align-self: flex-start; 
 }
 
 .chat-msg.admin {
   background: #e6ffe6;
-  align-self: flex-end;
+  align-self: flex-end; 
   margin-left: auto;
 }
 
@@ -95,5 +128,10 @@ export default {
   color: white;
   border-radius: 6px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.chat-form button:hover {
+    background-color: #218838;
 }
 </style>

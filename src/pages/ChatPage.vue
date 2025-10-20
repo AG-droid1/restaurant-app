@@ -2,7 +2,7 @@
   <div class="chat-page">
     <h2>Чат с поддержкой</h2>
 
-    <div class="chat-window">
+    <div class="chat-window" ref="chatWindow">
       <div v-for="(msg, index) in messages" :key="index" :class="['chat-msg', msg.from]">
         <span>{{ msg.text }}</span>
       </div>
@@ -16,7 +16,7 @@
 </template>
 
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters,mapActions  } from 'vuex'
 
 export default {
   name: 'ChatPage',
@@ -32,19 +32,51 @@ export default {
     }
   },
   methods: {
-    ...mapMutations(['addMessage']),
+    // ...mapMutations(['addMessage']),
+    // sendMessage() {
+    //   this.addMessage({ text: this.message, from: 'user' })
+
+    //   // Автоответ (заглушка)
+    //   setTimeout(() => {
+    //     this.addMessage({ text: 'Спасибо за ваше сообщение! Мы скоро ответим.', from: 'admin' })
+    //   }, 1000)
+
+    //   this.message = ''
+  //   }
+    ...mapActions(['sendChatMessage', 'fetchChatHistory']), 
     sendMessage() {
-      this.addMessage({ text: this.message, from: 'user' })
+      if (this.message.trim() === '') return; 
 
-      // Автоответ (заглушка)
-      setTimeout(() => {
-        this.addMessage({ text: 'Спасибо за ваше сообщение! Мы скоро ответим.', from: 'admin' })
-      }, 1000)
-
-      this.message = ''
+      const msg = { text: this.message, from: 'user' };
+      this.sendChatMessage(msg); 
+      this.message = ''; 
+    },
+    scrollToBottom() {
+      this.$nextTick(() => {
+        const chatWindow = this.$refs.chatWindow;
+        if (chatWindow) {
+          chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+      });
     }
+  },
+  watch: {
+    messages: {
+      handler() {
+        this.scrollToBottom(); 
+      },
+      deep: true 
+    }
+  },
+  created() {
+    this.fetchChatHistory(); 
+  },
+  mounted() {
+    this.scrollToBottom(); 
   }
 }
+
+
 </script>
 
 <style scoped>
@@ -52,6 +84,9 @@ export default {
   max-width: 600px;
   margin: 40px auto;
   padding: 20px;
+  border: 1px solid #eee; 
+  border-radius: 10px; 
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05); 
 }
 
 .chat-window {
@@ -62,6 +97,8 @@ export default {
   overflow-y: auto;
   margin-bottom: 15px;
   background: #f9f9f9;
+  display: flex; 
+  flex-direction: column; 
 }
 
 .chat-msg {
@@ -69,17 +106,18 @@ export default {
   margin-bottom: 8px;
   border-radius: 6px;
   max-width: 70%;
+  word-wrap: break-word; 
 }
 
 .chat-msg.user {
-  background: #d1e7ff;
-  align-self: flex-end;
+  background: #d1e7ff; 
+  align-self: flex-end; 
   margin-left: auto;
 }
 
 .chat-msg.admin {
-  background: #e6ffe6;
-  align-self: flex-start;
+  background: #e6ffe6; 
+  align-self: flex-start; 
 }
 
 .chat-form {
@@ -101,5 +139,9 @@ export default {
   color: white;
   border-radius: 6px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.chat-form button:hover {
+    background-color: #e0523f;
 }
 </style>
