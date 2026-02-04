@@ -1,3 +1,4 @@
+
 <template>
   <div id="app">
     <header class="app-header">
@@ -35,6 +36,7 @@
     <main class="app-main">
       <router-view />
     </main>
+    <ToastContainer />
 
     <footer class="app-footer">
       <p>© 2025 Ресторан Vue. Все права защищены.</p>
@@ -43,9 +45,13 @@
 </template>
 
 <script>
-import { mapGetters,mapMutations } from 'vuex'
+  import ToastContainer from './components/ToastContainer.vue'
+  import { mapGetters,mapMutations } from 'vuex'
 export default {
   name: 'App',
+  components :{
+    ToastContainer
+  },
     data() {
     return {
       isMenuOpen: false,
@@ -82,7 +88,7 @@ html, body, #app {
 #app {
   display: flex;
   flex-direction: column;
-  
+  background: url('/bg-restaurant.jpg') center/cover no-repeat;
 }
 
 .layout {

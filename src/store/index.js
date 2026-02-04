@@ -31,6 +31,7 @@ const store = createStore ({
     chatMessages: [],
     isAdmin: JSON.parse(localStorage.getItem('isAdmin')) || false,
     jwt_token: localStorage.getItem('jwt_token') || null, 
+    toasts: [],
   },
   mutations: {
     // меню блюда
@@ -131,6 +132,16 @@ const store = createStore ({
       localStorage.removeItem('jwt_token');
       localStorage.removeItem('isAdmin');
     },
+      deleteChatMessage(state, messageIndex) {
+    state.chatMessages.splice(messageIndex, 1);
+},
+      ADD_TOAST(state, toast) {
+            state.toasts.push(toast);
+          },
+          REMOVE_TOAST(state, id) {
+            state.toasts = state.toasts.filter(t => t.id !== id);
+          }
+  
   },
 
 
@@ -213,6 +224,15 @@ const store = createStore ({
         socket.emit('sendMessage', messageData);
         
     },
+    showToast({ commit }, { text, type = 'success' }) {
+      const id = Date.now();
+      commit('ADD_TOAST', { id, text, type });
+      
+      // Автоматическое удаление через 3 секунды
+      setTimeout(() => {
+        commit('REMOVE_TOAST', id);
+      }, 3000);
+    }
   },
 
 
@@ -231,7 +251,7 @@ const store = createStore ({
 
 
 // --- Обработчики Socket.IO событий (вне createStore) ---
-// Это важно, чтобы они были зарегистрированы один раз при создании стора.
+
 socket.on('connect', () => {
     console.log('Подключен к Socket.IO серверу!');
 });

@@ -3,7 +3,7 @@
     <h2>Чат с клиентами</h2>
 
     <div class="chat-window" ref="chatWindow">
-      <div v-for="(msg, index) in messages" :key="index" :class="['chat-msg', msg.from]">
+      <div v-for="(msg, index) in filteredChat" :key="index" :class="['chat-msg', msg.from]">
         <span><strong>{{ msg.from === 'admin' ? 'Вы' : 'Клиент' }}:</strong> {{ msg.text }}</span>
       </div>
     </div>
@@ -27,9 +27,9 @@ export default {
   },
   computed: {
     ...mapGetters(['chatMessages']),
-    messages() {
-      return this.chatMessages
-    }
+    filteredChat() {
+    return this.chatMessages.filter(msg => msg.from !== 'system');
+  }
   },
   methods: {
    
@@ -69,69 +69,73 @@ export default {
 
 <style scoped>
 .admin-chat {
-  max-width: 600px;
+  max-width: 500px;
   margin: 40px auto;
-  padding: 20px;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  background: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+h2 {
+  background: #2c3e50; 
+  color: white;
+  margin: 0;
+  padding: 15px;
+  text-align: center;
 }
 
 .chat-window {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  max-height: 400px;
+  height: 450px;
+  padding: 20px;
+  background: #f4f7f6;
   overflow-y: auto;
-  margin-bottom: 15px;
-  background: #f9f9f9;
   display: flex;
   flex-direction: column;
+  gap: 10px;
 }
-
 
 .chat-msg {
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  max-width: 70%;
-  word-wrap: break-word;
+  padding: 10px 15px;
+  border-radius: 12px;
+  font-size: 0.9rem;
 }
+
 
 .chat-msg.user {
-  background: #d1e7ff;
-  align-self: flex-start; 
+  background: #e0e0e0;
+  color: #444;
+  align-self: flex-start;
 }
 
+
 .chat-msg.admin {
-  background: #e6ffe6;
-  align-self: flex-end; 
-  margin-left: auto;
+  background: #28a745;
+  color: white;
+  align-self: flex-end;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
 }
 
 .chat-form {
+  padding: 15px;
   display: flex;
   gap: 10px;
+  background: #fff;
 }
 
 .chat-form input {
   flex: 1;
   padding: 10px;
-  border-radius: 6px;
+  border-radius: 5px;
   border: 1px solid #ccc;
 }
 
 .chat-form button {
-  padding: 10px 20px;
-  border: none;
-  background-color: #28a745;
+  background: #28a745;
   color: white;
-  border-radius: 6px;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.chat-form button:hover {
-    background-color: #218838;
 }
 </style>

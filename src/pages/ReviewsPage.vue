@@ -8,18 +8,21 @@
       <button type="submit">Оставить отзыв</button>
     </form>
 
-    <div class="review" v-for="(review, index) in reviews" :key="index">
-  <div class="avatar">{{ review.name.charAt(0).toUpperCase() }}</div>
-  <div class="review-content">
-    <h4>{{ review.name }}</h4>
-    <p>{{ review.message }}</p>
-  </div>
-</div>
+    <div class="reviews-list">
+      <div class="review" v-for="(review, index) in reviews" :key="index">
+        <div class="avatar">{{ review.name.charAt(0).toUpperCase() }}</div>
+        <div class="review-content">
+          <h4>{{ review.name }}</h4>
+          <p>{{ review.message }}</p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { mapState, mapMutations } from 'vuex'
+// Добавляем mapActions для работы с сокетами
+import { mapState, mapMutations, mapActions } from 'vuex'
 
 export default {
   data() {
@@ -35,124 +38,108 @@ export default {
   },
   methods: {
     ...mapMutations(['addReview']),
+    // Подключаем действие отправки сообщения в чат (через WebSocket)
+    ...mapActions(['sendChatMessage']),
+
     submitReview() {
-      const newReview = { ...this.form }
-      this.addReview(newReview)
-      this.form.name = ''
-      this.form.message = ''
+      if (!this.form.name || !this.form.message) return;
+
+      const newReview = { ...this.form };
+      
+      // 1. Сохраняем отзыв локально в список отзывов
+      this.addReview(newReview);
+
+      // 2. Формируем системное уведомление для админа
+      const notification = {
+        text: `⭐ НОВЫЙ ОТЗЫВ: ${newReview.name} написал: "${newReview.message.substring(0, 50)}${newReview.message.length > 50 ? '...' : ''}"`,
+        from: 'system',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      // 3. Отправляем в WebSocket, чтобы админ увидел это в ленте событий
+      this.sendChatMessage(notification);
+
+      // Очистка формы
+      this.form.name = '';
+      this.form.message = '';
+      
+      this.$store.dispatch('showToast', { text: 'Отзыв опубликован. Спасибо!', type: 'success' });
     }
   }
 }
 </script>
 
 <style scoped>
+/* Стили оставляем те же, они у тебя отличные */
 .reviews-page {
-
   max-width: 600px;
-  margin: 0 auto;
+  margin: 40px auto;
   padding: 30px;
   background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-
-.reviews-page h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #333;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
 
 .review-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
 .review-form input,
 .review-form textarea {
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 14px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background: #fdfdfd;
   font-family: inherit;
-  resize: none;
 }
 
 .review-form button {
-  padding: 12px;
+  padding: 14px;
   background-color: #ff6347;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: 0.3s;
 }
 
 .review-form button:hover {
   background-color: #e5533c;
+  transform: translateY(-2px);
 }
 
-.reviews-list .review {
-  border-top: 1px solid #eee;
-  padding: 15px 0;
-}
-
-.reviews-list .review h4 {
-  margin-bottom: 5px;
-  color: #444;
-}
-
-.reviews-list .review p {
-  margin: 0;
-  color: #555;
-  line-height: 1.5;
-}
 .reviews-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
 .review {
   display: flex;
   align-items: flex-start;
   gap: 15px;
-  background-color: #fdfdfd;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  padding: 15px 20px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
 }
 
 .avatar {
-  width: 50px;
-  height: 50px;
-  background-color: #ff6347;
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #ff6347, #ff8c7a);
   color: white;
-  font-weight: bold;
-  font-size: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
   flex-shrink: 0;
 }
-
-.review-content {
-  flex: 1;
-}
-
-.review-content h4 {
-  margin: 0 0 5px;
-  color: #333;
-}
-
-.review-content p {
-  margin: 0;
-  color: #555;
-  line-height: 1.4;
-}
-
+/* ... остальные стили контента ... */
 </style>

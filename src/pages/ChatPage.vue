@@ -3,7 +3,7 @@
     <h2>Чат с поддержкой</h2>
 
     <div class="chat-window" ref="chatWindow">
-      <div v-for="(msg, index) in messages" :key="index" :class="['chat-msg', msg.from]">
+      <div v-for="(msg, index) in displayMessages" :key="index" :class="['chat-msg', msg.from]">
         <span>{{ msg.text }}</span>
       </div>
     </div>
@@ -27,9 +27,9 @@ export default {
   },
   computed: {
     ...mapGetters(['chatMessages']),
-    messages() {
-      return this.chatMessages
-    }
+    displayMessages() {
+    return this.chatMessages.filter(msg => msg.from !== 'system');
+  }
   },
   methods: {
     // ...mapMutations(['addMessage']),
@@ -81,67 +81,97 @@ export default {
 
 <style scoped>
 .chat-page {
-  max-width: 600px;
+  max-width: 500px;
   margin: 40px auto;
+  background: rgba(255, 255, 255, 0.9); 
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+h2 {
+  background: #ff6347;
+  color: white;
+  margin: 0;
   padding: 20px;
-  border: 1px solid #eee; 
-  border-radius: 10px; 
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05); 
+  text-align: center;
+  font-size: 1.2rem;
 }
 
 .chat-window {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  max-height: 400px;
+  padding: 20px;
+  height: 400px;
   overflow-y: auto;
-  margin-bottom: 15px;
-  background: #f9f9f9;
-  display: flex; 
-  flex-direction: column; 
+  background: #fdf5e6; 
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .chat-msg {
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  max-width: 70%;
-  word-wrap: break-word; 
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  position: relative;
+  max-width: 80%;
 }
+
 
 .chat-msg.user {
-  background: #d1e7ff; 
-  align-self: flex-end; 
-  margin-left: auto;
+  background: #ff6347;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px; 
+  box-shadow: 0 4px 10px rgba(255, 99, 71, 0.3);
 }
+
 
 .chat-msg.admin {
-  background: #e6ffe6; 
-  align-self: flex-start; 
+  background: white;
+  color: #333;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px; 
+  border: 1px solid #eee;
 }
 
+
 .chat-form {
+  padding: 20px;
+  background: white;
   display: flex;
   gap: 10px;
+  border-top: 1px solid #eee;
 }
 
 .chat-form input {
   flex: 1;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  outline: none;
+  transition: border 0.3s;
+}
+
+.chat-form input:focus {
+  border-color: #ff6347;
 }
 
 .chat-form button {
-  padding: 10px 20px;
-  border: none;
-  background-color: #ff6347;
+  background: #ff6347;
   color: white;
-  border-radius: 6px;
+  border: none;
+  padding: 0 20px;
+  border-radius: 25px;
+  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: transform 0.2s, background 0.3s;
 }
+
 .chat-form button:hover {
-    background-color: #e0523f;
+  background: #e0523f;
+  transform: scale(1.05);
 }
 </style>
